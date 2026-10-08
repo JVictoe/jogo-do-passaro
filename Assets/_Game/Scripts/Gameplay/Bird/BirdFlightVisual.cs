@@ -15,10 +15,9 @@ namespace Scripts.Gameplay.Bird
         private BirdFlightMotor motor;
         private BirdInputReader input;
         private BirdFlightSettings settings;
-
+        private float currentBrakePitch;
         private float currentBankAngle;
         private float bankAngularVelocity;
-
         public float CurrentBankAngle => currentBankAngle;
 
         private void Awake()
@@ -46,7 +45,9 @@ namespace Scripts.Gameplay.Bird
         {
             currentBankAngle = 0f;
             bankAngularVelocity = 0f;
+            currentBrakePitch = 0f;
         }
+
 
         private void LateUpdate()
         {
@@ -62,8 +63,11 @@ namespace Scripts.Gameplay.Bird
 
             UpdateBankAngle(targetBank, deltaTime);
 
+            UpdateBrakeTilt(deltaTime);
+
             ApplyVisualRotation(deltaTime);
         }
+
 
         private float CalculateTargetBank()
         {
@@ -140,6 +144,32 @@ namespace Scripts.Gameplay.Bird
             );
         }
 
+
+        private void UpdateBrakeTilt(float deltaTime)
+        {
+            bool isBraking = motor.IsBraking;
+
+            // Angulo negativo levanta o nariz do passaro.
+            float targetPitch = isBraking
+                ? -settings.BrakePitchAngle
+                : 0f;
+
+            float response = isBraking
+                ? settings.BrakeTiltEnterResponse
+                : settings.BrakeTiltExitResponse;
+
+            float smoothing = 1f - Mathf.Exp(
+                -response * deltaTime
+            );
+
+            currentBrakePitch = Mathf.Lerp(
+                currentBrakePitch,
+                targetPitch,
+                smoothing
+            );
+        }
+
+
         private void ApplyVisualRotation(float deltaTime)
         {
             // Orientacao tridimensional do voo.
@@ -152,15 +182,17 @@ namespace Scripts.Gameplay.Bird
                 flightRotation;
 
             // Aplica a inclinacao visual.
-            Quaternion bankRotation =
+
+            Quaternion brakeAndBankRotation =
                 Quaternion.Euler(
-                    0f,
+                    currentBrakePitch,
                     0f,
                     currentBankAngle
                 );
 
             Quaternion targetRotation =
-                localFlightRotation * bankRotation;
+                localFlightRotation * brakeAndBankRotation;
+
 
             float smoothing = 1f - Mathf.Exp(
                 -settings.VisualSmoothing * deltaTime

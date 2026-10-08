@@ -33,8 +33,10 @@ namespace Scripts.Gameplay.Bird
         public float CurrentSpeed => currentSpeed;
         public float CurrentTurnRate => currentTurnRate;
 
-        public float ActualSpeed =>
-            rb != null ? rb.linearVelocity.magnitude : 0f;
+        public float ActualSpeed => rb != null ? rb.linearVelocity.magnitude : 0f;
+
+        public bool IsBraking => input != null && input.BrakeHeld && ActualSpeed > 0.3f;
+
 
         private void Awake()
         {
@@ -55,11 +57,7 @@ namespace Scripts.Gameplay.Bird
                 return;
             }
 
-            currentSpeed = Mathf.Clamp(
-                settings.StartSpeed,
-                settings.MinSpeed,
-                settings.MaxSpeed
-            );
+            currentSpeed = 0f;
 
             flightRotation = transform.rotation;
 
@@ -96,8 +94,7 @@ namespace Scripts.Gameplay.Bird
                 return;
             }
 
-            rb.linearVelocity =
-                transform.forward * currentSpeed;
+            rb.linearVelocity = Vector3.zero;
         }
 
         private void FixedUpdate()
@@ -109,27 +106,49 @@ namespace Scripts.Gameplay.Bird
             ApplyFlightPhysics();
         }
 
+
+
         private void UpdateSpeed(float dt)
         {
-            float throttle = input.Move.y;
+            bool wantsToFly = input.Move.y > 0.5f;
+            bool wantsToBrake = input.BrakeHeld;
 
-            if (throttle > 0f)
+            float targetSpeed = 0f;
+
+            // O freio tem prioridade sobre a aceleracao.
+            if (!wantsToBrake && wantsToFly)
             {
-                currentSpeed +=
-                    throttle * settings.Acceleration * dt;
-            }
-            else if (throttle < 0f)
-            {
-                currentSpeed +=
-                    throttle * settings.Braking * dt;
+                targetSpeed = input.BoostHeld
+                    ? settings.MaxSpeed
+                    : settings.CruiseSpeed;
             }
 
-            currentSpeed = Mathf.Clamp(
+            float changeRate;
+
+            if (wantsToBrake)
+            {
+                // Frenagem ativa.
+                changeRate = settings.EmergencyBraking;
+            }
+            else if (targetSpeed > currentSpeed)
+            {
+                // Aceleracao.
+                changeRate = settings.Acceleration;
+            }
+            else
+            {
+                // Desaceleracao natural.
+                changeRate = settings.Braking;
+            }
+
+            currentSpeed = Mathf.MoveTowards(
                 currentSpeed,
-                settings.MinSpeed,
-                settings.MaxSpeed
+                targetSpeed,
+                changeRate * dt
             );
         }
+
+
 
 
         private void UpdateFlightDirection(float dt)
@@ -202,6 +221,7 @@ namespace Scripts.Gameplay.Bird
         }
 
 
+
         private void ApplyFlightPhysics()
         {
             Vector3 flightDirection =
@@ -210,8 +230,7 @@ namespace Scripts.Gameplay.Bird
             Vector3 desiredVelocity =
                 flightDirection * currentSpeed;
 
-            // Preserve the previously validated
-            // collision response.
+            // Mantem a correcao de colisoes ja validada.
             if (hasBlockingContact)
             {
                 if (Vector3.Dot(
@@ -219,11 +238,10 @@ namespace Scripts.Gameplay.Bird
                     blockingNormal
                 ) < 0f)
                 {
-                    desiredVelocity =
-                        Vector3.ProjectOnPlane(
-                            desiredVelocity,
-                            blockingNormal
-                        );
+                    desiredVelocity = Vector3.ProjectOnPlane(
+                        desiredVelocity,
+                        blockingNormal
+                    );
                 }
             }
 
@@ -232,12 +250,23 @@ namespace Scripts.Gameplay.Bird
             Vector3 velocityError =
                 desiredVelocity - rb.linearVelocity;
 
+            // Resposta fisica mais forte durante a frenagem.
+            float brakeMultiplier = input.BrakeHeld
+                ? settings.BrakeResponseMultiplier
+                : 1f;
+
+            float response =
+                settings.VelocityResponse * brakeMultiplier;
+
+            float maxAcceleration =
+                settings.MaxFlightAcceleration * brakeMultiplier;
+
             Vector3 correction =
-                velocityError * settings.VelocityResponse;
+                velocityError * response;
 
             correction = Vector3.ClampMagnitude(
                 correction,
-                settings.MaxFlightAcceleration
+                maxAcceleration
             );
 
             rb.AddForce(
@@ -245,6 +274,7 @@ namespace Scripts.Gameplay.Bird
                 ForceMode.Acceleration
             );
         }
+
 
         private void OnCollisionEnter(Collision collision)
         {

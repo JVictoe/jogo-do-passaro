@@ -1,5 +1,6 @@
 
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Scripts.Gameplay.Bird
 {
@@ -7,15 +8,32 @@ namespace Scripts.Gameplay.Bird
         fileName = "BirdFlightSettings",
         menuName = "Bird/Flight Settings"
     )]
+
     public sealed class BirdFlightSettings : ScriptableObject
     {
         [Header("Speed")]
-        [SerializeField] private float minSpeed = 5f;
-        [SerializeField] private float startSpeed = 8f;
-        [SerializeField] private float maxSpeed = 18f;
+
+        [SerializeField, Min(0f)] private float minSpeed = 0f;
+        [FormerlySerializedAs("startSpeed")]
+        [SerializeField, Min(0f)] private float cruiseSpeed = 8f;
+        [SerializeField, Min(0f)] private float maxSpeed = 18f;
 
         [SerializeField] private float acceleration = 7f;
         [SerializeField] private float braking = 10f;
+
+        [Header("Active Braking")]
+
+        [SerializeField, Min(0f)] private float emergencyBraking = 36f;
+
+        [SerializeField, Min(1f)] private float brakeResponseMultiplier = 1.8f;
+
+        [Header("Braking Visual")]
+
+        [SerializeField, Range(0f, 50f)] private float brakePitchAngle = 30f;
+
+        [SerializeField, Min(0f)] private float brakeTiltEnterResponse = 14f;
+
+        [SerializeField, Min(0f)] private float brakeTiltExitResponse = 8f;
 
         [Header("Flight")]
         [SerializeField] private float turnSpeed = 180f;
@@ -40,7 +58,7 @@ namespace Scripts.Gameplay.Bird
         [SerializeField, Range(0f, 1f)] private float bankSpeedInfluence = 0.35f;
 
         public float MinSpeed => minSpeed;
-        public float StartSpeed => startSpeed;
+        public float CruiseSpeed => cruiseSpeed;
         public float MaxSpeed => maxSpeed;
         public float Acceleration => acceleration;
         public float Braking => braking;
@@ -58,11 +76,26 @@ namespace Scripts.Gameplay.Bird
         public float BankExitSmoothTime => bankExitSmoothTime;
         public float BankSpeedInfluence => bankSpeedInfluence;
         public float HighSpeedTurnMultiplier => highSpeedTurnMultiplier;
+
+        public float EmergencyBraking => emergencyBraking;
+
+        public float BrakeResponseMultiplier =>
+            brakeResponseMultiplier;
+
+        public float BrakePitchAngle => brakePitchAngle;
+
+        public float BrakeTiltEnterResponse =>
+            brakeTiltEnterResponse;
+
+        public float BrakeTiltExitResponse =>
+            brakeTiltExitResponse;
+
+
         private void OnValidate()
         {
-            minSpeed = Mathf.Max(0.1f, minSpeed);
+            minSpeed = Mathf.Max(0f, minSpeed);
             maxSpeed = Mathf.Max(minSpeed, maxSpeed);
-            startSpeed = Mathf.Clamp(startSpeed, minSpeed, maxSpeed);
+            cruiseSpeed = Mathf.Clamp(cruiseSpeed, minSpeed, maxSpeed);
 
             acceleration = Mathf.Max(0f, acceleration);
             braking = Mathf.Max(0f, braking);
@@ -70,19 +103,19 @@ namespace Scripts.Gameplay.Bird
             velocityResponse = Mathf.Max(0.1f, velocityResponse);
             maxFlightAcceleration = Mathf.Max(0.1f, maxFlightAcceleration);
 
+            emergencyBraking = Mathf.Max(braking,emergencyBraking);
+            brakeResponseMultiplier = Mathf.Max( 1f, brakeResponseMultiplier);
+            brakeTiltEnterResponse = Mathf.Max(0f,brakeTiltEnterResponse);
+            brakeTiltExitResponse = Mathf.Max(0f,brakeTiltExitResponse);
+
             maxBankAngle = Mathf.Clamp(maxBankAngle, 0f, 80f);
             turnBankFactor = Mathf.Max(0f, turnBankFactor);
             keyboardBankAngle = Mathf.Max(0f, keyboardBankAngle);
             visualSmoothing = Mathf.Max(0f, visualSmoothing);
 
-            bankEnterSmoothTime =
-                Mathf.Max(0.01f, bankEnterSmoothTime);
-
-            bankExitSmoothTime =
-                Mathf.Max(0.01f, bankExitSmoothTime);
-
-            bankSpeedInfluence =
-                Mathf.Clamp01(bankSpeedInfluence);
+            bankEnterSmoothTime =Mathf.Max(0.01f, bankEnterSmoothTime);
+            bankExitSmoothTime =Mathf.Max(0.01f, bankExitSmoothTime);
+            bankSpeedInfluence = Mathf.Clamp01(bankSpeedInfluence);
         }
     }
 }
