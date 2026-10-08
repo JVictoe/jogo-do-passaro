@@ -57,6 +57,9 @@ namespace Scripts.Gameplay.Bird
 
         [SerializeField, Range(0f, 1f)] private float bankSpeedInfluence = 0.35f;
 
+        [Header("Vertical Flight Feel")]
+        [SerializeField, Min(0f)] private float verticalSpeedInfluence = 2f;
+
         public float MinSpeed => minSpeed;
         public float CruiseSpeed => cruiseSpeed;
         public float MaxSpeed => maxSpeed;
@@ -79,17 +82,12 @@ namespace Scripts.Gameplay.Bird
 
         public float EmergencyBraking => emergencyBraking;
 
-        public float BrakeResponseMultiplier =>
-            brakeResponseMultiplier;
-
+        public float BrakeResponseMultiplier => brakeResponseMultiplier;
         public float BrakePitchAngle => brakePitchAngle;
+        public float BrakeTiltEnterResponse => brakeTiltEnterResponse;
+        public float BrakeTiltExitResponse => brakeTiltExitResponse;
 
-        public float BrakeTiltEnterResponse =>
-            brakeTiltEnterResponse;
-
-        public float BrakeTiltExitResponse =>
-            brakeTiltExitResponse;
-
+        public float VerticalSpeedInfluence => verticalSpeedInfluence;
 
         private void OnValidate()
         {
@@ -103,19 +101,21 @@ namespace Scripts.Gameplay.Bird
             velocityResponse = Mathf.Max(0.1f, velocityResponse);
             maxFlightAcceleration = Mathf.Max(0.1f, maxFlightAcceleration);
 
-            emergencyBraking = Mathf.Max(braking,emergencyBraking);
-            brakeResponseMultiplier = Mathf.Max( 1f, brakeResponseMultiplier);
-            brakeTiltEnterResponse = Mathf.Max(0f,brakeTiltEnterResponse);
-            brakeTiltExitResponse = Mathf.Max(0f,brakeTiltExitResponse);
+            emergencyBraking = Mathf.Max(braking, emergencyBraking);
+            brakeResponseMultiplier = Mathf.Max(1f, brakeResponseMultiplier);
+            brakeTiltEnterResponse = Mathf.Max(0f, brakeTiltEnterResponse);
+            brakeTiltExitResponse = Mathf.Max(0f, brakeTiltExitResponse);
 
             maxBankAngle = Mathf.Clamp(maxBankAngle, 0f, 80f);
             turnBankFactor = Mathf.Max(0f, turnBankFactor);
             keyboardBankAngle = Mathf.Max(0f, keyboardBankAngle);
             visualSmoothing = Mathf.Max(0f, visualSmoothing);
 
-            bankEnterSmoothTime =Mathf.Max(0.01f, bankEnterSmoothTime);
-            bankExitSmoothTime =Mathf.Max(0.01f, bankExitSmoothTime);
+            bankEnterSmoothTime = Mathf.Max(0.01f, bankEnterSmoothTime);
+            bankExitSmoothTime = Mathf.Max(0.01f, bankExitSmoothTime);
             bankSpeedInfluence = Mathf.Clamp01(bankSpeedInfluence);
+
+            verticalSpeedInfluence = Mathf.Max(0f, verticalSpeedInfluence);
         }
     }
 }

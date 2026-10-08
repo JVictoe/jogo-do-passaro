@@ -108,6 +108,7 @@ namespace Scripts.Gameplay.Bird
 
 
 
+
         private void UpdateSpeed(float dt)
         {
             bool wantsToFly = input.Move.y > 0.5f;
@@ -115,29 +116,45 @@ namespace Scripts.Gameplay.Bird
 
             float targetSpeed = 0f;
 
-            // O freio tem prioridade sobre a aceleracao.
-            if (!wantsToBrake && wantsToFly)
+            if (wantsToFly && !wantsToBrake)
             {
-                targetSpeed = input.BoostHeld
+                float baseSpeed = input.BoostHeld
                     ? settings.MaxSpeed
                     : settings.CruiseSpeed;
+
+                // Identifica se estamos subindo ou descendo.
+                Vector3 flightDirection =
+                    flightRotation * Vector3.forward;
+
+                float verticalDirection = Vector3.Dot(
+                    flightDirection,
+                    Vector3.up
+                );
+
+                // Subir reduz a velocidade-alvo.
+                // Mergulhar aumenta a velocidade-alvo.
+                float verticalModifier =
+                    -verticalDirection *
+                    settings.VerticalSpeedInfluence;
+
+                targetSpeed = Mathf.Max(
+                    0f,
+                    baseSpeed + verticalModifier
+                );
             }
 
             float changeRate;
 
             if (wantsToBrake)
             {
-                // Frenagem ativa.
                 changeRate = settings.EmergencyBraking;
             }
             else if (targetSpeed > currentSpeed)
             {
-                // Aceleracao.
                 changeRate = settings.Acceleration;
             }
             else
             {
-                // Desaceleracao natural.
                 changeRate = settings.Braking;
             }
 
@@ -147,9 +164,6 @@ namespace Scripts.Gameplay.Bird
                 changeRate * dt
             );
         }
-
-
-
 
         private void UpdateFlightDirection(float dt)
         {
