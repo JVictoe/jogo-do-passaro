@@ -131,9 +131,9 @@ namespace Scripts.Gameplay.Bird
             );
         }
 
+
         private void UpdateFlightDirection(float dt)
         {
-            // Cinemachine controls the desired direction.
             Vector3 cameraForward =
                 gameplayCamera.transform.forward;
 
@@ -146,11 +146,27 @@ namespace Scripts.Gameplay.Bird
             Vector3 previousForward =
                 flightRotation * Vector3.forward;
 
-            // Smoothly approach the camera direction.
+            // Agilidade proporcional a velocidade comandada.
+            float normalizedSpeed = Mathf.InverseLerp(
+                settings.MinSpeed,
+                settings.MaxSpeed,
+                currentSpeed
+            );
+
+            float speedMultiplier = Mathf.Lerp(
+                1f,
+                settings.HighSpeedTurnMultiplier,
+                normalizedSpeed
+            );
+
+            float effectiveTurnSpeed =
+                settings.TurnSpeed * speedMultiplier;
+
+            // Aproxima a direcao de voo da direcao da camera.
             flightRotation = Quaternion.RotateTowards(
                 flightRotation,
                 targetRotation,
-                settings.TurnSpeed * dt
+                effectiveTurnSpeed * dt
             );
 
             Vector3 newForward =
@@ -183,10 +199,8 @@ namespace Scripts.Gameplay.Bird
             {
                 currentTurnRate = 0f;
             }
-
-            // No Rigidbody rotation here.
-            // BirdFlightVisual handles visual orientation.
         }
+
 
         private void ApplyFlightPhysics()
         {

@@ -29,14 +29,15 @@ namespace Scripts.Gameplay.Bird
         [SerializeField] private float visualSmoothing = 10f;
 
         [Header("Banking Feel")]
-        [SerializeField, Min(0.01f)]
-        private float bankEnterSmoothTime = 0.12f;
+        [SerializeField, Min(0.01f)] private float bankEnterSmoothTime = 0.12f;
 
-        [SerializeField, Min(0.01f)]
-        private float bankExitSmoothTime = 0.32f;
 
-        [SerializeField, Range(0f, 1f)]
-        private float bankSpeedInfluence = 0.35f;
+        [Header("Turn Agility")]
+        [SerializeField, Range(0.4f, 1.4f)] private float highSpeedTurnMultiplier = 1f;
+
+        [SerializeField, Min(0.01f)] private float bankExitSmoothTime = 0.32f;
+
+        [SerializeField, Range(0f, 1f)] private float bankSpeedInfluence = 0.35f;
 
         public float MinSpeed => minSpeed;
         public float StartSpeed => startSpeed;
@@ -56,7 +57,7 @@ namespace Scripts.Gameplay.Bird
         public float BankEnterSmoothTime => bankEnterSmoothTime;
         public float BankExitSmoothTime => bankExitSmoothTime;
         public float BankSpeedInfluence => bankSpeedInfluence;
-
+        public float HighSpeedTurnMultiplier => highSpeedTurnMultiplier;
         private void OnValidate()
         {
             minSpeed = Mathf.Max(0.1f, minSpeed);
