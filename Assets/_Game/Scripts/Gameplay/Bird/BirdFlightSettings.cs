@@ -28,6 +28,16 @@ namespace Scripts.Gameplay.Bird
         [SerializeField] private float keyboardBankAngle = 12f;
         [SerializeField] private float visualSmoothing = 10f;
 
+        [Header("Banking Feel")]
+        [SerializeField, Min(0.01f)]
+        private float bankEnterSmoothTime = 0.12f;
+
+        [SerializeField, Min(0.01f)]
+        private float bankExitSmoothTime = 0.32f;
+
+        [SerializeField, Range(0f, 1f)]
+        private float bankSpeedInfluence = 0.35f;
+
         public float MinSpeed => minSpeed;
         public float StartSpeed => startSpeed;
         public float MaxSpeed => maxSpeed;
@@ -42,6 +52,10 @@ namespace Scripts.Gameplay.Bird
         public float TurnBankFactor => turnBankFactor;
         public float KeyboardBankAngle => keyboardBankAngle;
         public float VisualSmoothing => visualSmoothing;
+
+        public float BankEnterSmoothTime => bankEnterSmoothTime;
+        public float BankExitSmoothTime => bankExitSmoothTime;
+        public float BankSpeedInfluence => bankSpeedInfluence;
 
         private void OnValidate()
         {
@@ -59,6 +73,15 @@ namespace Scripts.Gameplay.Bird
             turnBankFactor = Mathf.Max(0f, turnBankFactor);
             keyboardBankAngle = Mathf.Max(0f, keyboardBankAngle);
             visualSmoothing = Mathf.Max(0f, visualSmoothing);
+
+            bankEnterSmoothTime =
+                Mathf.Max(0.01f, bankEnterSmoothTime);
+
+            bankExitSmoothTime =
+                Mathf.Max(0.01f, bankExitSmoothTime);
+
+            bankSpeedInfluence =
+                Mathf.Clamp01(bankSpeedInfluence);
         }
     }
 }

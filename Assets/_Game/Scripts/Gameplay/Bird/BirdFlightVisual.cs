@@ -16,6 +16,11 @@ namespace Scripts.Gameplay.Bird
         private BirdInputReader input;
         private BirdFlightSettings settings;
 
+        private float currentBankAngle;
+        private float bankAngularVelocity;
+
+        public float CurrentBankAngle => currentBankAngle;
+
         private void Awake()
         {
             motor = GetComponent<BirdFlightMotor>();
@@ -28,13 +33,19 @@ namespace Scripts.Gameplay.Bird
                 birdVisualPivot.parent != transform)
             {
                 Debug.LogError(
-                    "BirdFlightVisual: configure um " +
-                    "BirdVisualPivot filho direto de Bird.",
+                    "BirdFlightVisual: referencias invalidas.",
                     this
                 );
 
                 enabled = false;
+                return;
             }
+        }
+
+        private void OnEnable()
+        {
+            currentBankAngle = 0f;
+            bankAngularVelocity = 0f;
         }
 
         private void LateUpdate()
@@ -42,49 +53,117 @@ namespace Scripts.Gameplay.Bird
             if (!motor.isActiveAndEnabled)
                 return;
 
-            UpdateVisualRotation();
+            float deltaTime = Time.deltaTime;
+
+            if (deltaTime <= 0f)
+                return;
+
+            float targetBank = CalculateTargetBank();
+
+            UpdateBankAngle(targetBank, deltaTime);
+
+            ApplyVisualRotation(deltaTime);
         }
 
-        private void UpdateVisualRotation()
+        private float CalculateTargetBank()
         {
-            Quaternion flightRotation =
-                motor.FlightRotation;
+            // Curva detectada pelo motor.
+            float turnRate = motor.CurrentTurnRate;
 
-            float turnRate =
-                motor.CurrentTurnRate;
+            // Velocidade real do Rigidbody.
+            float currentSpeed = motor.ActualSpeed;
 
-            float keyboardInput =
-                input.Move.x;
+            float speedNormalized = Mathf.InverseLerp(
+                settings.MinSpeed,
+                settings.MaxSpeed,
+                currentSpeed
+            );
 
-            // Banking caused by flight direction changes.
+            // Curvas ficam visualmente mais intensas
+            // conforme a velocidade aumenta.
+            float speedMultiplier = Mathf.Lerp(
+                1f - settings.BankSpeedInfluence,
+                1f + settings.BankSpeedInfluence,
+                speedNormalized
+            );
+
             float turnBank =
-                -turnRate * settings.TurnBankFactor;
+                -turnRate *
+                settings.TurnBankFactor *
+                speedMultiplier;
 
-            // Additional banking from A / D.
+            // A/D complementam a inclinacao.
             float keyboardBank =
-                -keyboardInput * settings.KeyboardBankAngle;
+                -input.Move.x *
+                settings.KeyboardBankAngle;
 
-            float finalBank = Mathf.Clamp(
+            float targetBank = Mathf.Clamp(
                 turnBank + keyboardBank,
                 -settings.MaxBankAngle,
                 settings.MaxBankAngle
             );
 
-            // Convert world flight rotation to local space.
+            return targetBank;
+        }
+
+        private void UpdateBankAngle(
+            float targetBank,
+            float deltaTime)
+        {
+            bool changingDirection =
+                Mathf.Abs(targetBank) > 0.01f &&
+                Mathf.Sign(targetBank) !=
+                Mathf.Sign(currentBankAngle);
+
+            bool enteringBank =
+                Mathf.Abs(targetBank) >
+                Mathf.Abs(currentBankAngle) ||
+                changingDirection;
+
+            float smoothTime = enteringBank
+                ? settings.BankEnterSmoothTime
+                : settings.BankExitSmoothTime;
+
+            currentBankAngle = Mathf.SmoothDampAngle(
+                currentBankAngle,
+                targetBank,
+                ref bankAngularVelocity,
+                smoothTime,
+                Mathf.Infinity,
+                deltaTime
+            );
+
+            currentBankAngle = Mathf.Clamp(
+                currentBankAngle,
+                -settings.MaxBankAngle,
+                settings.MaxBankAngle
+            );
+        }
+
+        private void ApplyVisualRotation(float deltaTime)
+        {
+            // Orientacao tridimensional do voo.
+            Quaternion flightRotation =
+                motor.FlightRotation;
+
+            // Converte para o espaco local de Bird.
             Quaternion localFlightRotation =
                 Quaternion.Inverse(transform.rotation) *
                 flightRotation;
 
+            // Aplica a inclinacao visual.
             Quaternion bankRotation =
-                Quaternion.Euler(0f, 0f, finalBank);
+                Quaternion.Euler(
+                    0f,
+                    0f,
+                    currentBankAngle
+                );
 
             Quaternion targetRotation =
                 localFlightRotation * bankRotation;
 
-            // Framerate-independent visual smoothing.
             float smoothing = 1f - Mathf.Exp(
-                -settings.VisualSmoothing *
-                Time.deltaTime
+                -settings.VisualSmoothing * deltaTime
             );
 
             birdVisualPivot.localRotation =
