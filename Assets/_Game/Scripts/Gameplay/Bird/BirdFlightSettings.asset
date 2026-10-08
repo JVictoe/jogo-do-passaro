@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d2438b07a9c00143a8f6879e3888452, type: 3}
+  m_Name: BirdFlightSettings
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.Gameplay.Bird.BirdFlightSettings
+  minSpeed: 4
+  startSpeed: 8
+  maxSpeed: 18
+  acceleration: 7
+  braking: 10
+  turnSpeed: 5000
+  velocityResponse: 10
+  maxFlightAcceleration: 60
+  maxBankAngle: 25
+  turnBankFactor: 0.15
+  keyboardBankAngle: 12
+  visualSmoothing: 10
