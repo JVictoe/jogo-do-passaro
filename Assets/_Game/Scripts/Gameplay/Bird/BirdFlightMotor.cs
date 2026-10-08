@@ -16,9 +16,6 @@ namespace Scripts.Gameplay.Bird
         [SerializeField]
         private Camera gameplayCamera;
 
-        [SerializeField]
-        private Transform birdVisual;
-
         private Rigidbody rb;
         private BirdInputReader input;
 
@@ -26,11 +23,18 @@ namespace Scripts.Gameplay.Bird
         private float currentSpeed;
         private float currentTurnRate;
 
+        // Collision state
         private bool hasBlockingContact;
         private Vector3 blockingNormal;
 
-
+        // Read-only gameplay data
+        public BirdFlightSettings Settings => settings;
+        public Quaternion FlightRotation => flightRotation;
         public float CurrentSpeed => currentSpeed;
+        public float CurrentTurnRate => currentTurnRate;
+
+        public float ActualSpeed =>
+            rb != null ? rb.linearVelocity.magnitude : 0f;
 
         private void Awake()
         {
@@ -40,13 +44,10 @@ namespace Scripts.Gameplay.Bird
             if (gameplayCamera == null)
                 gameplayCamera = Camera.main;
 
-            if (settings == null ||
-                gameplayCamera == null ||
-                birdVisual == null ||
-                birdVisual == transform)
+            if (settings == null || gameplayCamera == null)
             {
                 Debug.LogError(
-                    "BirdFlightMotor: referencias invalidas.",
+                    "BirdFlightMotor: referencias ausentes.",
                     this
                 );
 
@@ -62,6 +63,11 @@ namespace Scripts.Gameplay.Bird
 
             flightRotation = transform.rotation;
 
+            ConfigureRigidbody();
+        }
+
+        private void ConfigureRigidbody()
+        {
             rb.isKinematic = false;
             rb.useGravity = false;
             rb.linearDamping = 0f;
@@ -69,15 +75,26 @@ namespace Scripts.Gameplay.Bird
             rb.interpolation =
                 RigidbodyInterpolation.Interpolate;
 
-
-            rb.constraints |= RigidbodyConstraints.FreezeRotation;
-
+            // Collision physics cannot rotate the capsule.
+            rb.constraints |=
+                RigidbodyConstraints.FreezeRotation;
         }
 
         private void Start()
         {
             if (!enabled)
                 return;
+
+            if (!input.isActiveAndEnabled)
+            {
+                Debug.LogError(
+                    "BirdFlightMotor: InputReader inativo.",
+                    this
+                );
+
+                enabled = false;
+                return;
+            }
 
             rb.linearVelocity =
                 transform.forward * currentSpeed;
@@ -114,9 +131,9 @@ namespace Scripts.Gameplay.Bird
             );
         }
 
-
         private void UpdateFlightDirection(float dt)
         {
+            // Cinemachine controls the desired direction.
             Vector3 cameraForward =
                 gameplayCamera.transform.forward;
 
@@ -129,6 +146,7 @@ namespace Scripts.Gameplay.Bird
             Vector3 previousForward =
                 flightRotation * Vector3.forward;
 
+            // Smoothly approach the camera direction.
             flightRotation = Quaternion.RotateTowards(
                 flightRotation,
                 targetRotation,
@@ -166,11 +184,9 @@ namespace Scripts.Gameplay.Bird
                 currentTurnRate = 0f;
             }
 
-            // Nao rotacionamos mais o Rigidbody.
-            // A rotacao visual continua no LateUpdate.
+            // No Rigidbody rotation here.
+            // BirdFlightVisual handles visual orientation.
         }
-
-
 
         private void ApplyFlightPhysics()
         {
@@ -180,7 +196,8 @@ namespace Scripts.Gameplay.Bird
             Vector3 desiredVelocity =
                 flightDirection * currentSpeed;
 
-            // Impede aceleracao para dentro de obstaculos.
+            // Preserve the previously validated
+            // collision response.
             if (hasBlockingContact)
             {
                 if (Vector3.Dot(
@@ -188,15 +205,14 @@ namespace Scripts.Gameplay.Bird
                     blockingNormal
                 ) < 0f)
                 {
-                    desiredVelocity = Vector3.ProjectOnPlane(
-                        desiredVelocity,
-                        blockingNormal
-                    );
+                    desiredVelocity =
+                        Vector3.ProjectOnPlane(
+                            desiredVelocity,
+                            blockingNormal
+                        );
                 }
             }
 
-            // Contatos sao atualizados pela proxima
-            // etapa de simulacao fisica.
             hasBlockingContact = false;
 
             Vector3 velocityError =
@@ -215,8 +231,6 @@ namespace Scripts.Gameplay.Bird
                 ForceMode.Acceleration
             );
         }
-
-
 
         private void OnCollisionEnter(Collision collision)
         {
@@ -243,7 +257,6 @@ namespace Scripts.Gameplay.Bird
                     normal
                 );
 
-                // O passaro esta voando contra a superficie.
                 if (dot < -0.1f)
                 {
                     blockingNormal = normal;
@@ -251,44 +264,6 @@ namespace Scripts.Gameplay.Bird
                     break;
                 }
             }
-        }
-
-
-        private void LateUpdate()
-        {
-            if (!enabled)
-                return;
-
-            float turnBank =
-                -currentTurnRate * settings.TurnBankFactor;
-
-            float keyboardBank =
-                -input.Move.x * settings.KeyboardBankAngle;
-
-            float bank = Mathf.Clamp(
-                turnBank + keyboardBank,
-                -settings.MaxBankAngle,
-                settings.MaxBankAngle
-            );
-
-            // Converte a direcao de voo para o espaco local.
-            Quaternion localFlightRotation =
-                Quaternion.Inverse(transform.rotation) *
-                flightRotation;
-
-            Quaternion targetVisualRotation =
-                localFlightRotation *
-                Quaternion.Euler(0f, 0f, bank);
-
-            float smoothing = 1f - Mathf.Exp(
-                -settings.VisualSmoothing * Time.deltaTime
-            );
-
-            birdVisual.localRotation = Quaternion.Slerp(
-                birdVisual.localRotation,
-                targetVisualRotation,
-                smoothing
-            );
         }
     }
 }
