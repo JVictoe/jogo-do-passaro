@@ -21,6 +21,7 @@ namespace Scripts.Gameplay.Bird
 
         private Quaternion flightRotation;
         private float currentSpeed;
+        private float diveMomentum;
         private float currentTurnRate;
 
         // Collision state
@@ -32,7 +33,7 @@ namespace Scripts.Gameplay.Bird
         public Quaternion FlightRotation => flightRotation;
         public float CurrentSpeed => currentSpeed;
         public float CurrentTurnRate => currentTurnRate;
-
+        public float DiveMomentum => diveMomentum;
         public float ActualSpeed => rb != null ? rb.linearVelocity.magnitude : 0f;
 
         public bool IsBraking => input != null && input.BrakeHeld && ActualSpeed > 0.3f;
@@ -107,12 +108,26 @@ namespace Scripts.Gameplay.Bird
         }
 
 
-
-
         private void UpdateSpeed(float dt)
         {
             bool wantsToFly = input.Move.y > 0.5f;
             bool wantsToBrake = input.BrakeHeld;
+
+            Vector3 flightDirection =
+                flightRotation * Vector3.forward;
+
+            float verticalDirection = Vector3.Dot(
+                flightDirection,
+                Vector3.up
+            );
+
+            // Atualiza o impulso armazenado.
+            UpdateDiveMomentum(
+                dt,
+                wantsToFly,
+                wantsToBrake,
+                verticalDirection
+            );
 
             float targetSpeed = 0f;
 
@@ -122,24 +137,17 @@ namespace Scripts.Gameplay.Bird
                     ? settings.MaxSpeed
                     : settings.CruiseSpeed;
 
-                // Identifica se estamos subindo ou descendo.
-                Vector3 flightDirection =
-                    flightRotation * Vector3.forward;
-
-                float verticalDirection = Vector3.Dot(
-                    flightDirection,
-                    Vector3.up
-                );
-
-                // Subir reduz a velocidade-alvo.
-                // Mergulhar aumenta a velocidade-alvo.
+                // Mantem a mecanica aprovada na v0.4.
                 float verticalModifier =
                     -verticalDirection *
                     settings.VerticalSpeedInfluence;
 
+                // Novo: aproveita o impulso acumulado.
                 targetSpeed = Mathf.Max(
                     0f,
-                    baseSpeed + verticalModifier
+                    baseSpeed +
+                    verticalModifier +
+                    diveMomentum
                 );
             }
 
@@ -163,6 +171,69 @@ namespace Scripts.Gameplay.Bird
                 targetSpeed,
                 changeRate * dt
             );
+        }
+
+        private void UpdateDiveMomentum(
+            float dt,
+            bool wantsToFly,
+            bool wantsToBrake,
+            float verticalDirection)
+        {
+            // Sem voo, com freio ou com o sistema desativado,
+            // descartamos o impulso armazenado.
+            if (!settings.EnableDiveMomentum ||
+                !wantsToFly ||
+                wantsToBrake)
+            {
+                diveMomentum = 0f;
+                return;
+            }
+
+            // 0 = voo horizontal
+            // 1 = mergulho totalmente vertical
+            float descentAmount = -verticalDirection;
+
+            // Evita acumular impulso em descidas muito leves.
+            float descentFactor = Mathf.Clamp01(
+                (descentAmount - 0.25f) / 0.75f
+            );
+
+            // Confirma que o Rigidbody está realmente descendo.
+            float actualDescentSpeed = Vector3.Dot(
+                rb.linearVelocity,
+                Vector3.down
+            );
+
+            bool isDiving =
+                descentFactor > 0f &&
+                actualDescentSpeed > 1.5f;
+
+            if (isDiving)
+            {
+                // Mergulhos mais acentuados acumulam
+                // impulso mais rapidamente.
+                diveMomentum = Mathf.MoveTowards(
+                    diveMomentum,
+                    settings.MaxDiveMomentum,
+                    settings.DiveMomentumGain *
+                    descentFactor * dt
+                );
+            }
+            else
+            {
+                // Ao subir, gastamos o impulso mais rapidamente.
+                bool isClimbing = verticalDirection > 0.25f;
+
+                float decayRate = isClimbing
+                    ? settings.ClimbMomentumDecay
+                    : settings.DiveMomentumDecay;
+
+                diveMomentum = Mathf.MoveTowards(
+                    diveMomentum,
+                    0f,
+                    decayRate * dt
+                );
+            }
         }
 
         private void UpdateFlightDirection(float dt)

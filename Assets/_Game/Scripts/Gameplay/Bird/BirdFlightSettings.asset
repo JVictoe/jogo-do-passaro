@@ -13,10 +13,15 @@ MonoBehaviour:
   m_Name: BirdFlightSettings
   m_EditorClassIdentifier: Assembly-CSharp::Scripts.Gameplay.Bird.BirdFlightSettings
   minSpeed: 4
-  startSpeed: 8
+  cruiseSpeed: 8
   maxSpeed: 18
   acceleration: 7
   braking: 10
+  emergencyBraking: 36
+  brakeResponseMultiplier: 1.8
+  brakePitchAngle: 30
+  brakeTiltEnterResponse: 14
+  brakeTiltExitResponse: 8
   turnSpeed: 5000
   velocityResponse: 10
   maxFlightAcceleration: 60
@@ -24,3 +29,13 @@ MonoBehaviour:
   turnBankFactor: 0.15
   keyboardBankAngle: 12
   visualSmoothing: 10
+  bankEnterSmoothTime: 0.12
+  highSpeedTurnMultiplier: 1
+  bankExitSmoothTime: 0.32
+  bankSpeedInfluence: 0.35
+  verticalSpeedInfluence: 2
+  enableDiveMomentum: 1
+  maxDiveMomentum: 3
+  diveMomentumGain: 1.5
+  diveMomentumDecay: 0.8
+  climbMomentumDecay: 1.5

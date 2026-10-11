@@ -60,6 +60,30 @@ namespace Scripts.Gameplay.Bird
         [Header("Vertical Flight Feel")]
         [SerializeField, Min(0f)] private float verticalSpeedInfluence = 2f;
 
+
+        [Header("Dive Momentum")]
+
+        [SerializeField]
+        private bool enableDiveMomentum = true;
+
+        [SerializeField, Min(0f)]
+        private float maxDiveMomentum = 3f;
+
+        [SerializeField, Min(0f)]
+        private float diveMomentumGain = 1.5f;
+
+        [SerializeField, Min(0f)]
+        private float diveMomentumDecay = 0.8f;
+
+        [SerializeField, Min(0f)]
+        private float climbMomentumDecay = 1.5f;
+
+        public bool EnableDiveMomentum => enableDiveMomentum;
+        public float MaxDiveMomentum => maxDiveMomentum;
+        public float DiveMomentumGain => diveMomentumGain;
+        public float DiveMomentumDecay => diveMomentumDecay;
+        public float ClimbMomentumDecay => climbMomentumDecay;
+
         public float MinSpeed => minSpeed;
         public float CruiseSpeed => cruiseSpeed;
         public float MaxSpeed => maxSpeed;
@@ -116,6 +140,11 @@ namespace Scripts.Gameplay.Bird
             bankSpeedInfluence = Mathf.Clamp01(bankSpeedInfluence);
 
             verticalSpeedInfluence = Mathf.Max(0f, verticalSpeedInfluence);
+
+            maxDiveMomentum = Mathf.Max(0f, maxDiveMomentum);
+            diveMomentumGain = Mathf.Max(0f, diveMomentumGain);
+            diveMomentumDecay = Mathf.Max(0f, diveMomentumDecay);
+            climbMomentumDecay = Mathf.Max(0f, climbMomentumDecay);
         }
     }
 }
