@@ -55824,6 +55824,7 @@ GameObject:
   - component: {fileID: 1728878417}
   - component: {fileID: 1728878415}
   - component: {fileID: 1728878414}
+  - component: {fileID: 1728878419}
   m_Layer: 0
   m_Name: Bird
   m_TagString: Untagged
@@ -55862,7 +55863,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BirdFlightMotor
   settings: {fileID: 11400000, guid: 423e83b7f6761cc47bc7f676134baed8, type: 2}
   gameplayCamera: {fileID: 1704015173}
-  birdVisual: {fileID: 4615898805598626}
 --- !u!114 &1728878415
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -55876,6 +55876,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BirdInputReader
   moveAction: {fileID: -1680190386980627800, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  boostAction: {fileID: -7471211009204490832, guid: 052faaac586de48259a63d0c4782560b, type: 3}
 --- !u!136 &1728878417
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -55926,6 +55927,19 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &1728878419
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1728878412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8dd7d82f00edf094ebcc364acac6defe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.Gameplay.Bird.BirdFlightVisual
+  birdVisualPivot: {fileID: 1580272304}
 --- !u!1001 &1729656987
 PrefabInstance:
   m_ObjectHideFlags: 0
