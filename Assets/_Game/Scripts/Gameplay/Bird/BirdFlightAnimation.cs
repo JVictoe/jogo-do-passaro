@@ -57,6 +57,60 @@ namespace Scripts.Gameplay.Bird
         [SerializeField, Min(0f)]
         private float flightTransitionDuration = 0.20f;
 
+
+        [Header("Glide Animation")]
+
+        [Tooltip(
+            "Velocidade fisica minima para entrar no Glide, em unidades/s."
+        )]
+        [SerializeField, Min(0f)]
+        private float glideEnterSpeed = 9.5f;
+
+        [Tooltip(
+            "Velocidade abaixo da qual o Glide termina, em unidades/s. " +
+            "Deve ser menor que Glide Enter Speed."
+        )]
+        [SerializeField, Min(0f)]
+        private float glideExitSpeed = 7.5f;
+
+        [Tooltip(
+    "Inclinacao minima de mergulho para entrar no Glide. " +
+    "0.12 corresponde a aproximadamente 7 graus para baixo."
+)]
+        [SerializeField, Range(0f, 1f)]
+        private float glideEnterDescent = 0.12f;
+
+        [Tooltip(
+            "Inclinacao minima para manter o Glide. " +
+            "Valores negativos permitem uma pequena subida " +
+            "sem interromper imediatamente a animacao."
+        )]
+        [SerializeField, Range(-1f, 1f)]
+        private float glideExitDescent = -0.08f;
+
+        [Tooltip(
+            "Duracao da transicao de entrada ou saida do Glide, " +
+            "em segundos."
+        )]
+        [SerializeField, Min(0f)]
+        private float glideTransitionDuration = 0.35f;
+
+
+        [Tooltip(
+            "Tempo durante o qual o passaro continua planando " +
+            "depois de iniciar uma subida, em segundos."
+        )]
+        [SerializeField, Min(0f)]
+        private float glideClimbHoldDuration = 2f;
+
+        // Evita considerar pequenas oscilacoes da camera
+        // como uma subida intencional.
+        private const float GlideClimbThreshold = 0.05f;
+
+        private float glideClimbElapsed;
+        private bool glideClimbStarted;
+
+
         private float brakeAnimationTimer;
         private bool brakeActivatedForPress;
 
@@ -67,6 +121,7 @@ namespace Scripts.Gameplay.Bird
         {
             FlightLoop,
             Boost,
+            Glide,
             Brake
         }
 
@@ -83,6 +138,9 @@ namespace Scripts.Gameplay.Bird
 
         private static readonly int FlightCycleSpeedHash =
             Animator.StringToHash("FlightCycleSpeed");
+
+        private static readonly int GlideHash =
+            Animator.StringToHash("Base Layer.Glide");
 
         private void Awake()
         {
@@ -102,7 +160,7 @@ namespace Scripts.Gameplay.Bird
 
             if (!animator.HasState(0, FlightLoopHash) ||
                 !animator.HasState(0, BoostHash) ||
-                !animator.HasState(0, BrakeHash))
+                !animator.HasState(0, BrakeHash) || !animator.HasState(0, GlideHash))
             {
                 Debug.LogError(
                     "BirdFlightAnimation: configure FlightLoop, " +
@@ -153,12 +211,52 @@ namespace Scripts.Gameplay.Bird
                 brakeAnimationTimer += Time.deltaTime;
             }
 
+            UpdateGlideClimbTimer(Time.deltaTime);
+
             FlightAnimationState targetState =
                 DetermineAnimationState();
 
             if (targetState != currentState)
             {
                 ChangeAnimation(targetState);
+            }
+        }
+
+
+        private void UpdateGlideClimbTimer(float dt)
+        {
+            if (currentState != FlightAnimationState.Glide)
+                return;
+
+            Vector3 flightDirection =
+                motor.FlightRotation * Vector3.forward;
+
+            float verticalDirection = Vector3.Dot(
+                flightDirection,
+                Vector3.up
+            );
+
+            // Um novo mergulho significativo permite
+            // preparar uma nova subida.
+            if (verticalDirection <= -glideEnterDescent)
+            {
+                glideClimbStarted = false;
+                glideClimbElapsed = 0f;
+                return;
+            }
+
+            // Inicia a contagem quando o passaro
+            // comeca realmente a subir.
+            if (verticalDirection >= GlideClimbThreshold)
+            {
+                glideClimbStarted = true;
+            }
+
+            // Depois que a subida comecou, o tempo
+            // continua passando mesmo se nivelar o voo.
+            if (glideClimbStarted)
+            {
+                glideClimbElapsed += dt;
             }
         }
 
@@ -191,39 +289,107 @@ namespace Scripts.Gameplay.Bird
         }
 
 
+
+        private bool ShouldGlide(bool wantsToFly)
+        {
+            if (!wantsToFly)
+                return false;
+
+            float actualSpeed = motor.ActualSpeed;
+
+            Vector3 flightDirection =
+                motor.FlightRotation * Vector3.forward;
+
+            float verticalDirection = Vector3.Dot(
+                flightDirection,
+                Vector3.up
+            );
+
+            bool isAlreadyGliding =
+                currentState == FlightAnimationState.Glide;
+
+            // Se o passaro iniciou uma subida enquanto
+            // planava, conserva a animacao por alguns
+            // segundos, mesmo com velocidade diminuindo.
+            if (isAlreadyGliding && glideClimbStarted)
+            {
+                bool hasRemainingTime =
+                    glideClimbElapsed < glideClimbHoldDuration;
+
+                bool isStillMoving =
+                    actualSpeed > hoverSpeedThreshold;
+
+                return hasRemainingTime && isStillMoving;
+            }
+
+            // Histerese de velocidade.
+            float requiredSpeed = isAlreadyGliding
+                ? Mathf.Min(glideExitSpeed, glideEnterSpeed)
+                : glideEnterSpeed;
+
+            // Histerese de inclinacao.
+            float requiredDescent = isAlreadyGliding
+                ? Mathf.Min(glideExitDescent, glideEnterDescent)
+                : glideEnterDescent;
+
+            float descentAmount = -verticalDirection;
+
+            bool hasEnoughSpeed =
+                actualSpeed >= requiredSpeed;
+
+            bool hasCorrectInclination =
+                descentAmount >= requiredDescent;
+
+            return hasEnoughSpeed && hasCorrectInclination;
+        }
+
+
+
+
         private FlightAnimationState DetermineAnimationState()
         {
             bool wantsToFly =
                 input.Move.y > 0.5f &&
                 !input.BrakeHeld;
 
-            // A animacao de freio ja comecou?
+            // 1. Frenagem em andamento.
+            // Permite que a animacao continue ate sua
+            // duracao terminar ou o jogador retomar o voo.
             if (currentState == FlightAnimationState.Brake)
             {
-                // Se o jogador voltar a voar,
-                // pode interromper a frenagem.
                 if (!wantsToFly &&
-                    brakeAnimationTimer < motor.Settings.BrakeFinishDuration)
+                    brakeAnimationTimer <
+                    motor.Settings.BrakeFinishDuration)
                 {
                     return FlightAnimationState.Brake;
                 }
             }
 
-            // Inicia a frenagem somente uma vez
-            // por acionamento de S.
-            if (motor.IsFinalBrakingPhase && input.BrakeHeld && !brakeActivatedForPress)
+            // 2. Nova frenagem final.
+            if (motor.IsFinalBrakingPhase &&
+                input.BrakeHeld &&
+                !brakeActivatedForPress)
             {
                 return FlightAnimationState.Brake;
             }
 
-            // Boost somente durante o voo.
+            // 3. Boost tem prioridade sobre Glide.
             if (wantsToFly && input.BoostHeld)
             {
                 return FlightAnimationState.Boost;
             }
 
+            // 4. Glide durante mergulhos rapidos.
+            if (ShouldGlide(wantsToFly))
+            {
+                return FlightAnimationState.Glide;
+            }
+
+            // 5. Hover e voo normal.
             return FlightAnimationState.FlightLoop;
         }
+
+
 
 
         private void ChangeAnimation(
@@ -235,30 +401,48 @@ namespace Scripts.Gameplay.Bird
             switch (newState)
             {
                 case FlightAnimationState.Boost:
+
                     stateHash = BoostHash;
+
+                    // Transicao mais suave quando
+                    // estamos saindo da pose de planar.
                     transitionDuration =
-                        boostTransitionDuration;
+                        currentState == FlightAnimationState.Glide
+                            ? glideTransitionDuration
+                            : boostTransitionDuration;
+
                     break;
 
-
                 case FlightAnimationState.Brake:
-                    stateHash = BrakeHash;
 
+                    stateHash = BrakeHash;
                     transitionDuration =
                         brakeTransitionDuration;
 
-                    // Reinicia o tempo somente quando
-                    // uma nova frenagem for iniciada.
                     brakeAnimationTimer = 0f;
                     brakeActivatedForPress = true;
 
                     break;
 
+                case FlightAnimationState.Glide:
+
+                    stateHash = GlideHash;
+                    transitionDuration =
+                        glideTransitionDuration;
+
+                    break;
 
                 default:
+
                     stateHash = FlightLoopHash;
+
+                    // Preserva a transicao especial
+                    // ao sair da animacao Glide.
                     transitionDuration =
-                        flightTransitionDuration;
+                        currentState == FlightAnimationState.Glide
+                            ? glideTransitionDuration
+                            : flightTransitionDuration;
+
                     break;
             }
 
@@ -268,7 +452,14 @@ namespace Scripts.Gameplay.Bird
                 0
             );
 
+            if (newState == FlightAnimationState.Glide || currentState == FlightAnimationState.Glide)
+            {
+                glideClimbElapsed = 0f;
+                glideClimbStarted = false;
+            }
+
             currentState = newState;
         }
+
     }
 }
