@@ -256,6 +256,14 @@ namespace Scripts.Gameplay.Bird
         [SerializeField, Min(0.1f)]
         private float brakeFinishDuration = 1.8f;
 
+        [Tooltip(
+            "Permite manter a inclinacao adicional para tras " +
+            "durante a fase final da frenagem de emergencia " +
+            "(S + Shift). Desativado por padrao."
+)]
+        [SerializeField]
+        private bool enableFinalBrakeBackwardTilt = false;
+
 
         #endregion
 
@@ -335,6 +343,31 @@ namespace Scripts.Gameplay.Bird
 
         #endregion
 
+        #region Emergency Braking
+
+        [Tooltip(
+            "Taxa de desaceleracao ao segurar S + Shift. " +
+            "Deve ser maior que Emergency Braking."
+        )]
+        [SerializeField, Min(0f)]
+        private float fastEmergencyBraking = 30f;
+
+        [Tooltip(
+            "Duracao aproximada da etapa final de desaceleracao " +
+            "com S + Shift. Valores menores produzem " +
+            "uma parada mais rapida."
+        )]
+        [SerializeField, Min(0.1f)]
+        private float fastBrakeFinishDuration = 0.8f;
+
+        [Tooltip(
+            "Multiplicador da resposta fisica durante " +
+            "a frenagem com S + Shift."
+        )]
+        [SerializeField, Min(1f)]
+        private float fastBrakeResponseMultiplier = 2.2f;
+
+        #endregion
 
 
         public bool EnableDiveMomentum => enableDiveMomentum;
@@ -376,6 +409,13 @@ namespace Scripts.Gameplay.Bird
 
         public float BrakeFinishDuration => brakeFinishDuration;
 
+        public float FastEmergencyBraking => fastEmergencyBraking;
+
+        public float FastBrakeFinishDuration => fastBrakeFinishDuration;
+
+        public float FastBrakeResponseMultiplier => fastBrakeResponseMultiplier;
+        public bool EnableFinalBrakeBackwardTilt => enableFinalBrakeBackwardTilt;
+
         private void OnValidate()
         {
             minSpeed = Mathf.Max(0f, minSpeed);
@@ -412,6 +452,12 @@ namespace Scripts.Gameplay.Bird
             brakeAnimationStartSpeed = Mathf.Max(0.1f, brakeAnimationStartSpeed);
 
             brakeFinishDuration = Mathf.Max(0.1f, brakeFinishDuration);
+
+            fastEmergencyBraking = Mathf.Max(emergencyBraking, fastEmergencyBraking);
+
+            fastBrakeFinishDuration = Mathf.Max(0.1f, fastBrakeFinishDuration);
+
+            fastBrakeResponseMultiplier = Mathf.Max(brakeResponseMultiplier, fastBrakeResponseMultiplier);
         }
     }
 }

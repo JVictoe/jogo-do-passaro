@@ -37,7 +37,7 @@ namespace Scripts.Gameplay.Bird
         // Indica ao Animator quando a fase final
         // de frenagem esta acontecendo.
         public bool IsFinalBrakingPhase => isFinalBrakingPhase && brakeFinalElapsed < settings.BrakeFinishDuration;
-
+        public bool IsEmergencyBraking => input != null && input.BrakeHeld && input.BoostHeld;
         // Read-only gameplay data
         public BirdFlightSettings Settings => settings;
         public Quaternion FlightRotation => flightRotation;
@@ -45,7 +45,6 @@ namespace Scripts.Gameplay.Bird
         public float CurrentTurnRate => currentTurnRate;
         public float DiveMomentum => diveMomentum;
         public float ActualSpeed => rb != null ? rb.linearVelocity.magnitude : 0f;
-
         public bool IsBraking => input != null && input.BrakeHeld && ActualSpeed > 0.3f;
 
 
@@ -119,9 +118,11 @@ namespace Scripts.Gameplay.Bird
 
 
 
+
         private void UpdateSpeed(float dt)
         {
             bool wantsToBrake = input.BrakeHeld;
+            bool emergencyBrake = IsEmergencyBraking;
 
             bool wantsToFly =
                 input.Move.y > 0.5f &&
@@ -135,7 +136,6 @@ namespace Scripts.Gameplay.Bird
                 Vector3.up
             );
 
-            // Preserva o sistema de Dive Momentum.
             UpdateDiveMomentum(
                 dt,
                 wantsToFly,
@@ -143,58 +143,55 @@ namespace Scripts.Gameplay.Bird
                 verticalDirection
             );
 
-            // Soltar S cancela o controle da fase final.
-            // A animacao pode continuar independentemente.
+            // Ao soltar S, cancela o controle
+            // da frenagem fisica.
             if (!wantsToBrake)
             {
                 isFinalBrakingPhase = false;
                 brakeFinalElapsed = 0f;
             }
 
-            // ETAPA 1:
-            // Detecta quando chegou a hora de iniciar
-            // a animacao de frenagem final.
+            // Detecta a entrada na fase final.
             if (wantsToBrake && !isFinalBrakingPhase)
             {
-                bool reachedBrakeAnimationSpeed =
+                bool reachedFinalSpeed =
                     ActualSpeed <=
                     settings.BrakeAnimationStartSpeed;
 
-                bool isStillMoving = ActualSpeed > 0.35f;
+                bool isStillMoving =
+                    ActualSpeed > 0.35f;
 
-                if (reachedBrakeAnimationSpeed && isStillMoving)
+                if (reachedFinalSpeed && isStillMoving)
                 {
                     isFinalBrakingPhase = true;
-
                     brakeFinalElapsed = 0f;
-                    brakeFinalStartSpeed = currentSpeed;
                 }
             }
 
-            // ETAPA 2:
-            // Durante a animacao final, reduzimos
-            // suavemente a velocidade ate zero.
+            // Fase final:
+            // S usa a desaceleracao normal.
+            // S + Shift usa uma desaceleracao mais forte.
             if (wantsToBrake && isFinalBrakingPhase)
             {
-                brakeFinalElapsed = Mathf.Min(
-                    brakeFinalElapsed + dt,
-                    settings.BrakeFinishDuration
-                );
+                float finishDuration = emergencyBrake
+                    ? settings.FastBrakeFinishDuration
+                    : settings.BrakeFinishDuration;
 
-                float progress =
-                    brakeFinalElapsed /
-                    settings.BrakeFinishDuration;
+                float finalDeceleration =
+                    settings.BrakeAnimationStartSpeed /
+                    finishDuration;
 
-                currentSpeed = Mathf.Lerp(
-                    brakeFinalStartSpeed,
+                currentSpeed = Mathf.MoveTowards(
+                    currentSpeed,
                     0f,
-                    progress
+                    finalDeceleration * dt
                 );
+
+                brakeFinalElapsed += dt;
 
                 return;
             }
 
-            // Voo normal, Boost e desaceleracao natural.
             float targetSpeed = 0f;
 
             if (wantsToFly)
@@ -219,8 +216,9 @@ namespace Scripts.Gameplay.Bird
 
             if (wantsToBrake)
             {
-                // Frenagem inicial mais suave.
-                changeRate = settings.EmergencyBraking;
+                changeRate = emergencyBrake
+                    ? settings.FastEmergencyBraking
+                    : settings.EmergencyBraking;
             }
             else if (targetSpeed > currentSpeed)
             {
@@ -237,6 +235,7 @@ namespace Scripts.Gameplay.Bird
                 changeRate * dt
             );
         }
+
 
 
         private void UpdateDiveMomentum(
@@ -402,9 +401,14 @@ namespace Scripts.Gameplay.Bird
                 desiredVelocity - rb.linearVelocity;
 
             // Resposta fisica mais forte durante a frenagem.
-            float brakeMultiplier = input.BrakeHeld
-                ? settings.BrakeResponseMultiplier
-                : 1f;
+            float brakeMultiplier = 1f;
+
+            if (input.BrakeHeld)
+            {
+                brakeMultiplier = IsEmergencyBraking
+                    ? settings.FastBrakeResponseMultiplier
+                    : settings.BrakeResponseMultiplier;
+            }
 
             float response =
                 settings.VelocityResponse * brakeMultiplier;

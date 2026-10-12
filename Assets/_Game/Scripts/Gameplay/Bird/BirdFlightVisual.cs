@@ -73,14 +73,19 @@ namespace Scripts.Gameplay.Bird
         {
             Quaternion flightRotation = motor.FlightRotation;
 
-            bool noForwardMovementInput =
-                Mathf.Abs(input.Move.y) < 0.1f;
+
+            bool wantsToFly =
+                input.Move.y > 0.5f &&
+                !input.BrakeHeld;
 
             bool isPracticallyStopped =
                 motor.ActualSpeed <= HoverSpeedThreshold;
 
+            // O passaro pode estar parado mesmo
+            // enquanto o jogador segura S.
             bool isHovering =
-                noForwardMovementInput && isPracticallyStopped;
+                !wantsToFly && isPracticallyStopped;
+
 
             // Durante o voo, mantemos a orientacao 3D completa.
             if (!isHovering)
@@ -190,22 +195,37 @@ namespace Scripts.Gameplay.Bird
         }
 
 
+
         private void UpdateBrakeTilt(float deltaTime)
         {
-            bool isBraking = motor.IsBraking || (input.BrakeHeld && motor.IsFinalBrakingPhase);
+            bool isBraking =
+                motor.IsBraking ||
+                (input.BrakeHeld && motor.IsFinalBrakingPhase);
 
-            // Angulo negativo levanta o nariz do passaro.
-            float targetPitch = isBraking
-                ? -settings.BrakePitchAngle
-                : 0f;
+            bool emergencyFinalBrake =
+                motor.IsEmergencyBraking &&
+                motor.IsFinalBrakingPhase;
 
-            float response = isBraking
+            // Na frenagem normal, mantem a inclinacao.
+            // Na emergencia, libera o corpo para a
+            // animacao do mortal durante a fase final.
+            // A opcao antiga permite reativar essa
+            // inclinacao extra futuramente.
+            bool canTiltBackward =
+                !emergencyFinalBrake ||
+                settings.EnableFinalBrakeBackwardTilt;
+
+            float targetPitch =
+                isBraking && canTiltBackward
+                    ? -settings.BrakePitchAngle
+                    : 0f;
+
+            float response = targetPitch != 0f
                 ? settings.BrakeTiltEnterResponse
                 : settings.BrakeTiltExitResponse;
 
-            float smoothing = 1f - Mathf.Exp(
-                -response * deltaTime
-            );
+            float smoothing =
+                1f - Mathf.Exp(-response * deltaTime);
 
             currentBrakePitch = Mathf.Lerp(
                 currentBrakePitch,
@@ -213,6 +233,7 @@ namespace Scripts.Gameplay.Bird
                 smoothing
             );
         }
+
 
 
 

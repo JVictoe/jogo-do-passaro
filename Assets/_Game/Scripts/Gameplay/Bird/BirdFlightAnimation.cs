@@ -366,9 +366,7 @@ namespace Scripts.Gameplay.Bird
             }
 
             // 2. Nova frenagem final.
-            if (motor.IsFinalBrakingPhase &&
-                input.BrakeHeld &&
-                !brakeActivatedForPress)
+            if (motor.IsFinalBrakingPhase && motor.IsEmergencyBraking && !brakeActivatedForPress)
             {
                 return FlightAnimationState.Brake;
             }

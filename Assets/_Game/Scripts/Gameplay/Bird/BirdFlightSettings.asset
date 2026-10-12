@@ -28,11 +28,13 @@ MonoBehaviour:
   bankEnterSmoothTime: 0.15
   bankExitSmoothTime: 0.35
   bankSpeedInfluence: 0.35
-  emergencyBraking: 55
+  emergencyBraking: 12
   brakeResponseMultiplier: 1.8
   brakePitchAngle: 30
   brakeTiltEnterResponse: 14
   brakeTiltExitResponse: 8
+  brakeAnimationStartSpeed: 6
+  brakeFinishDuration: 1.8
   verticalSpeedInfluence: 4
   enableDiveMomentum: 1
   maxDiveMomentum: 5
