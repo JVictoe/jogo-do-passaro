@@ -201,7 +201,7 @@ namespace Scripts.Gameplay.Bird
             "uma frenagem ativa mais rapida do que soltar W."
         )]
         [SerializeField, Min(0f)]
-        private float emergencyBraking = 36f;
+        private float emergencyBraking = 12f;
 
         [Tooltip(
             "Multiplicador da resposta fisica do Rigidbody durante " +
@@ -239,6 +239,23 @@ namespace Scripts.Gameplay.Bird
         )]
         [SerializeField, Min(0f)]
         private float brakeTiltExitResponse = 8f;
+
+
+        [Tooltip(
+            "Velocidade fisica em que a animacao final " +
+            "de frenagem comeca a ser reproduzida."
+        )]
+        [SerializeField, Min(0.1f)]
+        private float brakeAnimationStartSpeed = 6f;
+
+        [Tooltip(
+            "Tempo usado para desacelerar suavemente " +
+            "durante a animacao final de frenagem. " +
+            "Deve corresponder a duracao do clip Brake."
+        )]
+        [SerializeField, Min(0.1f)]
+        private float brakeFinishDuration = 1.8f;
+
 
         #endregion
 
@@ -355,6 +372,10 @@ namespace Scripts.Gameplay.Bird
 
         public float VerticalSpeedInfluence => verticalSpeedInfluence;
 
+        public float BrakeAnimationStartSpeed => brakeAnimationStartSpeed;
+
+        public float BrakeFinishDuration => brakeFinishDuration;
+
         private void OnValidate()
         {
             minSpeed = Mathf.Max(0f, minSpeed);
@@ -387,6 +408,10 @@ namespace Scripts.Gameplay.Bird
             diveMomentumGain = Mathf.Max(0f, diveMomentumGain);
             diveMomentumDecay = Mathf.Max(0f, diveMomentumDecay);
             climbMomentumDecay = Mathf.Max(0f, climbMomentumDecay);
+
+            brakeAnimationStartSpeed = Mathf.Max(0.1f, brakeAnimationStartSpeed);
+
+            brakeFinishDuration = Mathf.Max(0.1f, brakeFinishDuration);
         }
     }
 }

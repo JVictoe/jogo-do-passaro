@@ -192,7 +192,7 @@ namespace Scripts.Gameplay.Bird
 
         private void UpdateBrakeTilt(float deltaTime)
         {
-            bool isBraking = motor.IsBraking;
+            bool isBraking = motor.IsBraking || (input.BrakeHeld && motor.IsFinalBrakingPhase);
 
             // Angulo negativo levanta o nariz do passaro.
             float targetPitch = isBraking

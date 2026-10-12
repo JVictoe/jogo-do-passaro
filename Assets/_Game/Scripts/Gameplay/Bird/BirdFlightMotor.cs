@@ -28,6 +28,16 @@ namespace Scripts.Gameplay.Bird
         private bool hasBlockingContact;
         private Vector3 blockingNormal;
 
+
+        private bool isFinalBrakingPhase;
+
+        private float brakeFinalElapsed;
+        private float brakeFinalStartSpeed;
+
+        // Indica ao Animator quando a fase final
+        // de frenagem esta acontecendo.
+        public bool IsFinalBrakingPhase => isFinalBrakingPhase && brakeFinalElapsed < settings.BrakeFinishDuration;
+
         // Read-only gameplay data
         public BirdFlightSettings Settings => settings;
         public Quaternion FlightRotation => flightRotation;
@@ -108,10 +118,14 @@ namespace Scripts.Gameplay.Bird
         }
 
 
+
         private void UpdateSpeed(float dt)
         {
-            bool wantsToFly = input.Move.y > 0.5f;
             bool wantsToBrake = input.BrakeHeld;
+
+            bool wantsToFly =
+                input.Move.y > 0.5f &&
+                !wantsToBrake;
 
             Vector3 flightDirection =
                 flightRotation * Vector3.forward;
@@ -121,7 +135,7 @@ namespace Scripts.Gameplay.Bird
                 Vector3.up
             );
 
-            // Atualiza o impulso armazenado.
+            // Preserva o sistema de Dive Momentum.
             UpdateDiveMomentum(
                 dt,
                 wantsToFly,
@@ -129,20 +143,70 @@ namespace Scripts.Gameplay.Bird
                 verticalDirection
             );
 
+            // Soltar S cancela o controle da fase final.
+            // A animacao pode continuar independentemente.
+            if (!wantsToBrake)
+            {
+                isFinalBrakingPhase = false;
+                brakeFinalElapsed = 0f;
+            }
+
+            // ETAPA 1:
+            // Detecta quando chegou a hora de iniciar
+            // a animacao de frenagem final.
+            if (wantsToBrake && !isFinalBrakingPhase)
+            {
+                bool reachedBrakeAnimationSpeed =
+                    ActualSpeed <=
+                    settings.BrakeAnimationStartSpeed;
+
+                bool isStillMoving = ActualSpeed > 0.35f;
+
+                if (reachedBrakeAnimationSpeed && isStillMoving)
+                {
+                    isFinalBrakingPhase = true;
+
+                    brakeFinalElapsed = 0f;
+                    brakeFinalStartSpeed = currentSpeed;
+                }
+            }
+
+            // ETAPA 2:
+            // Durante a animacao final, reduzimos
+            // suavemente a velocidade ate zero.
+            if (wantsToBrake && isFinalBrakingPhase)
+            {
+                brakeFinalElapsed = Mathf.Min(
+                    brakeFinalElapsed + dt,
+                    settings.BrakeFinishDuration
+                );
+
+                float progress =
+                    brakeFinalElapsed /
+                    settings.BrakeFinishDuration;
+
+                currentSpeed = Mathf.Lerp(
+                    brakeFinalStartSpeed,
+                    0f,
+                    progress
+                );
+
+                return;
+            }
+
+            // Voo normal, Boost e desaceleracao natural.
             float targetSpeed = 0f;
 
-            if (wantsToFly && !wantsToBrake)
+            if (wantsToFly)
             {
                 float baseSpeed = input.BoostHeld
                     ? settings.MaxSpeed
                     : settings.CruiseSpeed;
 
-                // Mantem a mecanica aprovada na v0.4.
                 float verticalModifier =
                     -verticalDirection *
                     settings.VerticalSpeedInfluence;
 
-                // Novo: aproveita o impulso acumulado.
                 targetSpeed = Mathf.Max(
                     0f,
                     baseSpeed +
@@ -155,6 +219,7 @@ namespace Scripts.Gameplay.Bird
 
             if (wantsToBrake)
             {
+                // Frenagem inicial mais suave.
                 changeRate = settings.EmergencyBraking;
             }
             else if (targetSpeed > currentSpeed)
@@ -172,6 +237,7 @@ namespace Scripts.Gameplay.Bird
                 changeRate * dt
             );
         }
+
 
         private void UpdateDiveMomentum(
             float dt,
