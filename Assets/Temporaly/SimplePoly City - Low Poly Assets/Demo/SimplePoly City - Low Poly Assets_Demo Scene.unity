@@ -60742,6 +60742,7 @@ GameObject:
   - component: {fileID: 1728878419}
   - component: {fileID: 1728878420}
   - component: {fileID: 1728878421}
+  - component: {fileID: 1728878422}
   m_Layer: 0
   m_Name: Bird
   m_TagString: Untagged
@@ -60907,6 +60908,28 @@ MonoBehaviour:
   groundContactDistance: 0
   showGizmos: 1
   logDetectionChanges: 0
+--- !u!114 &1728878422
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1728878412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c618f9dafc3d9f8498ae8c165839a8d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.Gameplay.Bird.BirdLocomotionController
+  startGrounded: 0
+  landingDescentSpeed: 2.5
+  landingHorizontalDeceleration: 20
+  landingVerticalAcceleration: 12
+  landingSlowdownDistance: 0.8
+  takeoffSpeed: 3.5
+  takeoffHeight: 1.4
+  takeoffMaxDuration: 1.2
+  landingCooldownAfterTakeoff: 0.6
+  logStateChanges: 1
 --- !u!1001 &1729656987
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -27,12 +27,10 @@ namespace Scripts.Gameplay.Bird
         // Collision state
         private bool hasBlockingContact;
         private Vector3 blockingNormal;
-
-
         private bool isFinalBrakingPhase;
-
         private float brakeFinalElapsed;
-        private float brakeFinalStartSpeed;
+
+        private BirdLocomotionController locomotion;
 
         // Indica ao Animator quando a fase final
         // de frenagem esta acontecendo.
@@ -52,6 +50,7 @@ namespace Scripts.Gameplay.Bird
         {
             rb = GetComponent<Rigidbody>();
             input = GetComponent<BirdInputReader>();
+            locomotion = GetComponent<BirdLocomotionController>();
 
             if (gameplayCamera == null)
                 gameplayCamera = Camera.main;
@@ -109,6 +108,14 @@ namespace Scripts.Gameplay.Bird
 
         private void FixedUpdate()
         {
+            // A locomocao assume o Rigidbody durante
+            // pouso, decolagem e movimento terrestre.
+            if (locomotion != null &&
+                locomotion.State != BirdLocomotionState.Flying)
+            {
+                return;
+            }
+
             float dt = Time.fixedDeltaTime;
 
             UpdateSpeed(dt);
@@ -117,6 +124,32 @@ namespace Scripts.Gameplay.Bird
         }
 
 
+        public void PrepareForFlight()
+        {
+            // Limpa os valores herdados do voo anterior.
+            currentSpeed = 0f;
+            diveMomentum = 0f;
+            currentTurnRate = 0f;
+
+            isFinalBrakingPhase = false;
+            brakeFinalElapsed = 0f;
+
+            hasBlockingContact = false;
+            blockingNormal = Vector3.zero;
+
+            // Alinha a proxima direcao de voo
+            // com a camera.
+            Vector3 direction =
+                gameplayCamera.transform.forward;
+
+            if (direction.sqrMagnitude > 0.001f)
+            {
+                flightRotation = Quaternion.LookRotation(
+                    direction,
+                    Vector3.up
+                );
+            }
+        }
 
 
         private void UpdateSpeed(float dt)

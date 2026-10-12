@@ -103,7 +103,7 @@ namespace Scripts.Gameplay.Bird
             }
         }
 
-        private void FixedUpdate()
+        public void RefreshDetection()
         {
             DetectLandingSurface();
         }
@@ -226,5 +226,44 @@ namespace Scripts.Gameplay.Bird
                 );
             }
         }
+
+
+        public bool IsValidLandingContact(Collision collision)
+        {
+            if (collision == null || collision.collider == null)
+                return false;
+
+            // Verifica se o objeto pertence a uma
+            // das Layers permitidas para pouso.
+            int colliderLayer =
+                collision.collider.gameObject.layer;
+
+            bool isLandable =
+                (landableMask.value & (1 << colliderLayer)) != 0;
+
+            if (!isLandable)
+                return false;
+
+            // Verifica a inclinacao dos pontos reais
+            // de contato entre os Colliders.
+            for (int i = 0; i < collision.contactCount; i++)
+            {
+                Vector3 normal =
+                    collision.GetContact(i).normal;
+
+                float slopeAngle = Vector3.Angle(
+                    normal,
+                    Vector3.up
+                );
+
+                if (slopeAngle <= maxLandingSlope)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
     }
 }
