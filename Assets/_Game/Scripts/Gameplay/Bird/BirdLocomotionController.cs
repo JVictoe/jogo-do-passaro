@@ -206,20 +206,20 @@ namespace Scripts.Gameplay.Bird
                     break;
             }
 
-            if (Time.time >= nextDebugTime)
-            {
-                Debug.Log(
-                    $"[BIRD LOCOMOTION] " +
-                    $"State: {State} | " +
-                    $"Ground: {groundDetector.HasLandingSurface} | " +
-                    $"Close: {groundDetector.IsCloseToSurface} | " +
-                    $"Distance: {groundDetector.DistanceToSurface:F2} | " +
-                    $"Velocity: {rb.linearVelocity} | " +
-                    $"Gravity: {rb.useGravity}"
-                );
+            //if (Time.time >= nextDebugTime)
+            //{
+            //    Debug.Log(
+            //        $"[BIRD LOCOMOTION] " +
+            //        $"State: {State} | " +
+            //        $"Ground: {groundDetector.HasLandingSurface} | " +
+            //        $"Close: {groundDetector.IsCloseToSurface} | " +
+            //        $"Distance: {groundDetector.DistanceToSurface:F2} | " +
+            //        $"Velocity: {rb.linearVelocity} | " +
+            //        $"Gravity: {rb.useGravity}"
+            //    );
 
-                nextDebugTime = Time.time + 0.25f;
-            }
+            //    nextDebugTime = Time.time + 0.25f;
+            //}
         }
 
         private void UpdateFlying(bool togglePressed)
