@@ -14,6 +14,10 @@ namespace Scripts.Gameplay.Bird
         [SerializeField] private LayerMask decalSurfaceMask = ~0;
         [SerializeField, Min(0.01f)] private float maxFlightLifetime = 8f;
 
+        [Header("Cartoon Impact VFX")]
+        [SerializeField] private GameObject impactVfxPrefab;
+        [SerializeField, Min(0.2f)] private float impactVfxLifetime = 2f;
+
         [Header("Decal")]
         [SerializeField, Range(0.01f, 0.2f)] private float surfaceOffset = 0.06f;
         [SerializeField, Range(0.5f, 1f)] private float minSizeMultiplier = 0.85f;
@@ -79,10 +83,45 @@ namespace Scripts.Gameplay.Bird
                 {
                     ContactPoint contact = collision.GetContact(0);
                     SpawnDecal(contact.point, contact.normal);
+                    SpawnImpactVfx(contact.point, contact.normal);
                 }
             }
 
             Destroy(gameObject);
+        }
+
+        private void SpawnImpactVfx(Vector3 point, Vector3 surfaceNormal)
+        {
+            if (impactVfxPrefab == null)
+                return;
+
+            Vector3 normal = surfaceNormal.normalized;
+            if (normal.sqrMagnitude < 0.001f)
+                normal = Vector3.up;
+
+            // Particle System Shape / Cone emite ao longo do Z local.
+            // Orienta o prefab para projetar gotas para fora da superficie.
+            Quaternion rotation = Quaternion.LookRotation(normal);
+
+            GameObject effect = Instantiate(
+                impactVfxPrefab,
+                point + normal * 0.015f,
+                rotation
+            );
+
+            // Suporta prefabs com Play On Awake desativado.
+            ParticleSystem[] particles = effect.GetComponentsInChildren<ParticleSystem>(true);
+            foreach (ParticleSystem particle in particles)
+            {
+                if (!particle.gameObject.activeInHierarchy)
+                    continue;
+
+                if (!particle.isPlaying)
+                    particle.Play(true);
+            }
+
+            // Nao altera nem acumula efeitos no projétil.
+            Destroy(effect, impactVfxLifetime);
         }
 
         private void SpawnDecal(Vector3 point, Vector3 surfaceNormal)

@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 3.58532, y: 0.2, z: 18.14769}
-  m_LocalScale: {x: 0.13, y: 0.13, z: 0.13}
+  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -158,6 +158,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 8
   maxFlightLifetime: 8
+  impactVfxPrefab: {fileID: 907968738054484759, guid: 2ec4ad0d031215c46b2b0d7b6c232f72, type: 3}
+  impactVfxLifetime: 2
   surfaceOffset: 0.06
   minSizeMultiplier: 0.85
   maxSizeMultiplier: 1.15
