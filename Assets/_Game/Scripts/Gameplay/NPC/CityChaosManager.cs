@@ -30,7 +30,7 @@ namespace Scripts.Gameplay.NPC
         public void RefreshProfiles()
         {
             NpcNavigationProfile[] profiles =
-                FindObjectsByType<NpcNavigationProfile>(FindObjectsSortMode.None);
+                FindObjectsByType<NpcNavigationProfile>();
 
             foreach (NpcNavigationProfile profile in profiles)
                 profile.SetChaosActive(IsChaosActive);

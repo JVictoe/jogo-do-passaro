@@ -65,7 +65,7 @@ namespace Scripts.Gameplay.NPC
         [SerializeField] private bool hasReactionDestination;
         [SerializeField] private float panicSecondsRemaining;
         [SerializeField] private bool waitForCalmBeforeWatching;
-        [SerializeField] private bool hasRememberedSidewalk;
+        //[SerializeField] private bool hasRememberedSidewalk;
         [SerializeField] private Vector3 rememberedSidewalkPosition;
         [SerializeField] private string returnDiagnostic = "Not returning";
         [SerializeField] private int returnRouteFailures;
@@ -681,7 +681,7 @@ namespace Scripts.Gameplay.NPC
             if (!agent.isOnNavMesh || !IsOnSidewalk()) return;
             hasLastSafeSidewalk = true;
             lastSafeSidewalkPosition = agent.nextPosition;
-            hasRememberedSidewalk = true;
+            //hasRememberedSidewalk = true;
             rememberedSidewalkPosition = lastSafeSidewalkPosition;
         }
 

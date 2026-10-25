@@ -203,7 +203,7 @@ Transform:
   m_GameObject: {fileID: 1384017}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 16.91, y: 0, z: 16.74}
+  m_LocalPosition: {x: 74, y: 0, z: 16.3}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -239,6 +239,9 @@ MonoBehaviour:
   returnSpeed: 2
   returnRouteTimeout: 18
   sidewalkArrivalSampleRadius: 0.15
+  sidewalkInteriorClearance: 0.4
+  maximumSidewalkSearchRadius: 160
+  returnArrivalTolerance: 0.55
   logStateChanges: 1
   drawDestinationGizmo: 1
   currentState: 0
@@ -246,6 +249,19 @@ MonoBehaviour:
   hasReactionDestination: 0
   panicSecondsRemaining: 0
   waitForCalmBeforeWatching: 0
+  hasRememberedSidewalk: 0
+  rememberedSidewalkPosition: {x: 0, y: 0, z: 0}
+  returnDiagnostic: Not returning
+  returnRouteFailures: 0
+  returnStallCount: 0
+  currentNavArea: Unknown
+  remainingReturnDistance: -1
+  sidewalkDistanceAtFeet: -1
+  returnSecondsWithoutProgress: 0
+  selectedSidewalkClearance: 0
+  returnAgentStopped: 0
+  returnAgentSpeed: 0
+  returnPathStatus: None
 --- !u!114 &1384020
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -35020,6 +35036,9 @@ MonoBehaviour:
   returnSpeed: 2
   returnRouteTimeout: 18
   sidewalkArrivalSampleRadius: 0.15
+  sidewalkInteriorClearance: 0.4
+  maximumSidewalkSearchRadius: 160
+  returnArrivalTolerance: 0.55
   logStateChanges: 1
   drawDestinationGizmo: 1
   currentState: 0
@@ -35027,6 +35046,19 @@ MonoBehaviour:
   hasReactionDestination: 0
   panicSecondsRemaining: 0
   waitForCalmBeforeWatching: 0
+  hasRememberedSidewalk: 0
+  rememberedSidewalkPosition: {x: 0, y: 0, z: 0}
+  returnDiagnostic: Not returning
+  returnRouteFailures: 0
+  returnStallCount: 0
+  currentNavArea: Unknown
+  remainingReturnDistance: -1
+  sidewalkDistanceAtFeet: -1
+  returnSecondsWithoutProgress: 0
+  selectedSidewalkClearance: 0
+  returnAgentStopped: 0
+  returnAgentSpeed: 0
+  returnPathStatus: None
 --- !u!114 &1016750882
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -65600,6 +65632,9 @@ MonoBehaviour:
   returnSpeed: 2
   returnRouteTimeout: 18
   sidewalkArrivalSampleRadius: 0.15
+  sidewalkInteriorClearance: 0.4
+  maximumSidewalkSearchRadius: 160
+  returnArrivalTolerance: 0.55
   logStateChanges: 1
   drawDestinationGizmo: 1
   currentState: 0
@@ -65607,6 +65642,19 @@ MonoBehaviour:
   hasReactionDestination: 0
   panicSecondsRemaining: 0
   waitForCalmBeforeWatching: 0
+  hasRememberedSidewalk: 0
+  rememberedSidewalkPosition: {x: 0, y: 0, z: 0}
+  returnDiagnostic: Not returning
+  returnRouteFailures: 0
+  returnStallCount: 0
+  currentNavArea: Unknown
+  remainingReturnDistance: -1
+  sidewalkDistanceAtFeet: -1
+  returnSecondsWithoutProgress: 0
+  selectedSidewalkClearance: 0
+  returnAgentStopped: 0
+  returnAgentSpeed: 0
+  returnPathStatus: None
 --- !u!1 &1821941995 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 100000, guid: 6fa2aa0a1d56aba4a8884471618de9e4, type: 3}
@@ -76373,6 +76421,9 @@ MonoBehaviour:
   returnSpeed: 2
   returnRouteTimeout: 18
   sidewalkArrivalSampleRadius: 0.15
+  sidewalkInteriorClearance: 0.4
+  maximumSidewalkSearchRadius: 160
+  returnArrivalTolerance: 0.55
   logStateChanges: 1
   drawDestinationGizmo: 1
   currentState: 0
@@ -76380,6 +76431,19 @@ MonoBehaviour:
   hasReactionDestination: 0
   panicSecondsRemaining: 0
   waitForCalmBeforeWatching: 0
+  hasRememberedSidewalk: 0
+  rememberedSidewalkPosition: {x: 0, y: 0, z: 0}
+  returnDiagnostic: Not returning
+  returnRouteFailures: 0
+  returnStallCount: 0
+  currentNavArea: Unknown
+  remainingReturnDistance: -1
+  sidewalkDistanceAtFeet: -1
+  returnSecondsWithoutProgress: 0
+  selectedSidewalkClearance: 0
+  returnAgentStopped: 0
+  returnAgentSpeed: 0
+  returnPathStatus: None
 --- !u!114 &2132301307
 MonoBehaviour:
   m_ObjectHideFlags: 0
