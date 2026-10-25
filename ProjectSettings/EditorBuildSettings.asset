@@ -6,8 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Temporaly/SimplePoly City - Low Poly Assets/Demo/SimplePoly City
-      - Low Poly Assets_Demo Scene.unity
+    path: Assets/_Game/1 - Scene/SimplePoly City - Low Poly Assets_Demo Scene.unity
     guid: 7e6d3f4e5d896154ab4438845532ac3e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -23,7 +23,8 @@ namespace Scripts.Gameplay.NPC
         [SerializeField] private bool showGizmos = true;
 
         private NavMeshAgent agent;
-        private NavMeshPath path;
+        private NpcNavigationProfile navigationProfile;
+        private NavMeshPath candidatePath;
         private Vector3 homePosition;
         private float nextWalkTime;
         private float moveDeadline;
@@ -34,18 +35,27 @@ namespace Scripts.Gameplay.NPC
         private void Awake()
         {
             agent = GetComponent<NavMeshAgent>();
-            path = new NavMeshPath();
+            navigationProfile = GetComponent<NpcNavigationProfile>();
+            // Unity native NavMeshPath must be created in Awake, not in field initialization.
+            candidatePath = new NavMeshPath();
         }
 
         private void Start()
         {
             homePosition = transform.position;
 
+            if (navigationProfile != null && !navigationProfile.IsConfigured)
+            {
+                Debug.LogError($"NpcWanderAI ({name}): navigation areas are not configured.", this);
+                enabled = false;
+                return;
+            }
+
             if (!agent.isOnNavMesh)
             {
                 Debug.LogWarning(
                     $"NpcWanderAI: {name} nao esta sobre uma NavMesh. " +
-                    "Posicione o NPC na area azul e refaca o Bake se necessario.", this);
+                    "Posicione o NPC sobre sua area e refaca o Bake se necessario.", this);
                 enabled = false;
                 return;
             }
@@ -74,7 +84,7 @@ namespace Scripts.Gameplay.NPC
             if (agent.pathPending)
                 return;
 
-            if (agent.pathStatus == NavMeshPathStatus.PathInvalid)
+            if (agent.pathStatus != NavMeshPathStatus.PathComplete)
             {
                 StopAndPause();
                 return;
@@ -90,6 +100,14 @@ namespace Scripts.Gameplay.NPC
 
         private bool TryStartWandering()
         {
+            // Explicit filter makes sampling respect both the agent type and the
+            // active area mask (important when cars get a second NavMeshSurface).
+            NavMeshQueryFilter filter = new NavMeshQueryFilter
+            {
+                agentTypeID = agent.agentTypeID,
+                areaMask = agent.areaMask
+            };
+
             for (int i = 0; i < destinationAttempts; i++)
             {
                 Vector2 offset = Random.insideUnitCircle * wanderRadius;
@@ -98,20 +116,18 @@ namespace Scripts.Gameplay.NPC
 
                 if (!NavMesh.SamplePosition(
                         candidate, out NavMeshHit hit,
-                        sampleDistance, agent.areaMask))
+                        sampleDistance, filter))
                     continue;
 
                 if (Vector3.Distance(transform.position, hit.position) <
                     minimumTravelDistance)
                     continue;
 
-                // Evita escolher um telhado ou outro andar proximo
-                // da area de passeio deste NPC.
                 if (Mathf.Abs(hit.position.y - homePosition.y) > 1.5f)
                     continue;
 
-                if (!agent.CalculatePath(hit.position, path) ||
-                    path.status != NavMeshPathStatus.PathComplete)
+                if (!agent.CalculatePath(hit.position, candidatePath) ||
+                    candidatePath.status != NavMeshPathStatus.PathComplete)
                     continue;
 
                 agent.isStopped = false;
@@ -124,6 +140,21 @@ namespace Scripts.Gameplay.NPC
             }
 
             return false;
+        }
+
+        // Called on Normal/Chaos changes so a restricted agent does not
+        // keep following an old path across a forbidden area.
+        public void RefreshNavigationRules()
+        {
+            isWalking = false;
+
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+                agent.ResetPath();
+            }
+
+            nextWalkTime = Time.time + 0.25f;
         }
 
         private void StopAndPause()
