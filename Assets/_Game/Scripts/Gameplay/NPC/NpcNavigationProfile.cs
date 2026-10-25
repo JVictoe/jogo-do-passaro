@@ -3,7 +3,8 @@ using UnityEngine.AI;
 
 namespace Scripts.Gameplay.NPC
 {
-    // Applied before wander scripts make their first navigation request.
+    // v0.9.5: adds independent local panic without changing the existing
+    // global CityChaosManager.SetChaosActive(...) interface.
     [DefaultExecutionOrder(-200)]
     [RequireComponent(typeof(NavMeshAgent))]
     [DisallowMultipleComponent]
@@ -25,10 +26,14 @@ namespace Scripts.Gameplay.NPC
         private int chaosMask;
         private bool isConfigured;
         private bool isChaosActive;
+        private bool globalChaosActive;
+        private bool localChaosActive;
 
         public AgentCategory Category => category;
         public bool IsConfigured => isConfigured;
+        // Effective permissions (global OR local).
         public bool IsChaosActive => isChaosActive;
+        public bool IsLocalChaosActive => localChaosActive;
 
         private void Awake()
         {
@@ -58,26 +63,41 @@ namespace Scripts.Gameplay.NPC
             chaosMask = sidewalkMask | crosswalkMask | roadMask;
             isConfigured = true;
 
-            ApplyMask(startInChaos, false);
+            globalChaosActive = startInChaos;
+            localChaosActive = false;
+            ApplyMask(requestNewPath: false, force: true);
         }
 
+        // Existing CityChaosManager uses this as the GLOBAL switch.
         public void SetChaosActive(bool enabled)
         {
-            if (!isConfigured)
+            if (!isConfigured || globalChaosActive == enabled)
                 return;
 
-            if (isChaosActive == enabled)
-                return;
-
-            ApplyMask(enabled, true);
+            globalChaosActive = enabled;
+            ApplyMask(requestNewPath: true, force: false);
         }
 
-        private void ApplyMask(bool enabled, bool requestNewPath)
+        // New: only this one NPC may use Road/Sidewalk/Crosswalk while panicked.
+        public void SetLocalChaosActive(bool enabled)
         {
-            isChaosActive = enabled;
-            agent.areaMask = enabled ? chaosMask : normalMask;
+            if (!isConfigured || localChaosActive == enabled)
+                return;
 
-            // A mask change may invalidate the previous path.
+            localChaosActive = enabled;
+            ApplyMask(requestNewPath: true, force: false);
+        }
+
+        private void ApplyMask(bool requestNewPath, bool force)
+        {
+            bool effectiveChaos = globalChaosActive || localChaosActive;
+            if (!force && isChaosActive == effectiveChaos)
+                return;
+
+            isChaosActive = effectiveChaos;
+            agent.areaMask = effectiveChaos ? chaosMask : normalMask;
+
+            // The previous route may use areas that are forbidden now.
             if (requestNewPath && agent.isActiveAndEnabled && agent.isOnNavMesh)
             {
                 if (wanderAI != null && wanderAI.isActiveAndEnabled)

@@ -142,6 +142,24 @@ namespace Scripts.Gameplay.NPC
             return false;
         }
 
+        // v0.9.5.1: explicit handoff after the reactions controller finishes.
+        // Reanchors the wander area near the sidewalk where the NPC recovered,
+        // so a long panic run does not leave every sampled destination far away.
+        public void ResumeAfterReaction()
+        {
+            if (agent == null || !agent.isActiveAndEnabled || !agent.isOnNavMesh)
+            {
+                Debug.LogWarning($"NpcWanderAI ({name}): cannot resume outside the NavMesh.", this);
+                return;
+            }
+
+            homePosition = agent.nextPosition;
+            isWalking = false;
+            agent.isStopped = true;
+            agent.ResetPath();
+            nextWalkTime = Time.time + 0.35f;
+        }
+
         // Called on Normal/Chaos changes so a restricted agent does not
         // keep following an old path across a forbidden area.
         public void RefreshNavigationRules()
