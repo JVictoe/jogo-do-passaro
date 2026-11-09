@@ -1,4 +1,5 @@
 using UnityEngine;
+using Scripts.Gameplay.Bird;
 
 namespace Scripts.Gameplay.Vehicles
 {
@@ -33,18 +34,10 @@ namespace Scripts.Gameplay.Vehicles
         [SerializeField] private int hornCount;
 
         private AudioSource hornSource;
-        private static Rigidbody sharedBirdRigidbody;
-        private static float nextSharedSearchTime;
 
         private float enabledAt;
         private float nextHornTime;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            sharedBirdRigidbody = null;
-            nextSharedSearchTime = 0f;
-        }
+        private BirdContext bird;
 
         private void Awake()
         {
@@ -80,26 +73,31 @@ namespace Scripts.Gameplay.Vehicles
                 hornSource.Stop();
         }
 
+
         private void Update()
         {
-            if (sharedBirdRigidbody == null)
+            // Referência centralizada do pássaro.
+            if (bird == null)
             {
-                FindBirdWhenNeeded();
+                bird = BirdContext.Instance;
                 currentBirdDistance = -1f;
                 currentBirdSpeed = 0f;
                 return;
             }
 
-            Vector3 difference = sharedBirdRigidbody.position - transform.position;
+            // Informações obtidas diretamente do BirdContext.
+            Vector3 difference = bird.Position - transform.position;
             float distanceSquared = difference.sqrMagnitude;
+
             currentBirdDistance = Mathf.Sqrt(distanceSquared);
-            currentBirdSpeed = sharedBirdRigidbody.linearVelocity.magnitude;
+            currentBirdSpeed = bird.Speed;
 
             float rearmRadius = detectionRadius + resetDistanceExtra;
-            bool isOutsideResetZone = distanceSquared >= rearmRadius * rearmRadius;
+            bool isOutsideResetZone =
+                distanceSquared >= rearmRadius * rearmRadius;
 
-            // Uma instancia nova NAO buzina por ja ter nascido perto do passaro.
-            // Se nasceu longe, fica pronta para a primeira aproximacao.
+            // Impede que o carro buzine simplesmente por nascer
+            // próximo ao pássaro.
             if (!initialObservationComplete)
             {
                 if (Time.time - enabledAt < startGraceSeconds)
@@ -110,42 +108,41 @@ namespace Scripts.Gameplay.Vehicles
                 return;
             }
 
-            // So rearma ao sair da zona ampliada, evitando repeticoes na borda.
+            // Rearma a buzina quando o pássaro se afasta.
             if (isOutsideResetZone)
             {
                 armed = true;
                 return;
             }
 
-            if (!armed || distanceSquared > detectionRadius * detectionRadius ||
-                currentBirdSpeed < minimumBirdSpeed || Time.time < nextHornTime)
+            // Verifica as condições necessárias para buzinar.
+            if (!armed ||
+                distanceSquared > detectionRadius * detectionRadius ||
+                currentBirdSpeed < minimumBirdSpeed ||
+                Time.time < nextHornTime)
+            {
                 return;
+            }
 
+            // Dispara a buzina.
             armed = false;
             nextHornTime = Time.time + hornCooldown;
             hornCount++;
+
             PlayHorn();
         }
 
-        private static void FindBirdWhenNeeded()
-        {
-            if (Time.time < nextSharedSearchTime)
-                return;
-
-            nextSharedSearchTime = Time.time + 1f;
-            // A tag Player deve estar no GameObject que contem o Rigidbody do Bird.
-            GameObject bird = GameObject.FindGameObjectWithTag("Player");
-            if (bird != null)
-                sharedBirdRigidbody = bird.GetComponent<Rigidbody>();
-        }
 
         private void PlayHorn()
         {
             if (hornSource != null)
             {
-                AudioClip clip = hornClip.Length > 0 ? hornClip[Random.Range(0, hornClip.Length)] : hornSource.clip;
-                if (clip != null)
-                    hornSource.PlayOneShot(clip, hornVolume);
+                if (Random.Range(0, 100) > 90)
+                {
+                    AudioClip clip = hornClip.Length > 0 ? hornClip[Random.Range(0, hornClip.Length)] : hornSource.clip;
+                    if (clip != null)
+                        hornSource.PlayOneShot(clip, hornVolume);
+                }
             }
 
             if (logHorn)

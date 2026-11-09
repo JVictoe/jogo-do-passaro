@@ -352970,11 +352970,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 10a42ecc92ca99e4bad19449ade9235d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  newPrefab: {fileID: 7277876617700435926, guid: 8d23721dd69c86e48aac4d0140d8d163, type: 3}
-  oldGameObjects:
-  - {fileID: 0}
-  - {fileID: 0}
-  searchByTag: 
 --- !u!1001 &712583006
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -476601,7 +476596,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -476616,7 +476611,7 @@ MonoBehaviour:
   m_RequiresColorTexture: 0
   m_TaaSettings:
     m_Quality: 3
-    m_FrameInfluence: 0.1
+    m_FrameInfluence: 0.100000024
     m_JitterScale: 1
     m_MipBias: 0
     m_VarianceClampScale: 0.9
@@ -639698,6 +639693,7 @@ GameObject:
   - component: {fileID: 1300171558}
   - component: {fileID: 1300171557}
   - component: {fileID: 1300171556}
+  - component: {fileID: 1300171566}
   m_Layer: 0
   m_Name: Bird
   m_TagString: Player
@@ -639935,6 +639931,18 @@ Rigidbody:
   m_Interpolate: 1
   m_Constraints: 112
   m_CollisionDetection: 0
+--- !u!114 &1300171566
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1300171554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff361f43d5d7a5940a26eb4361bd9feb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scripts.Gameplay.Bird.BirdContext
 --- !u!1 &1300684133
 GameObject:
   m_ObjectHideFlags: 0
@@ -770417,7 +770425,7 @@ MonoBehaviour:
   - {fileID: 1470616138786737668, guid: 9498f4f3f20d7b94b83efa72751b58eb, type: 3}
   m_SpawnDistance: 10
   m_CarRoot: {fileID: 799774308}
-  m_SpawnProbability: 0.45
+  m_SpawnProbability: 0.1
 --- !u!1 &1586672410
 GameObject:
   m_ObjectHideFlags: 0
